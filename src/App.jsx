@@ -45,6 +45,9 @@ export default function App() {
 
   const [sharedView, setSharedView] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
+  const [showShare, setShowShare] = useState(false)
+  const [shareUrl, setShareUrl] = useState(null)
+  const [shareError, setShareError] = useState(null)
 
   // Errors appear only after the first submit attempt, then update live so
   // they clear as the user fixes each field.
@@ -67,6 +70,22 @@ export default function App() {
   useEffect(() => {
     if (submitAttempted) setFieldErrors(validateForm(form))
   }, [form, submitAttempted])
+
+  // Build the share link as soon as homework exists, not when Share is
+  // clicked. Firefox drops the user-activation that authorises a clipboard
+  // write if you await anything first, so the click handler must be able to
+  // copy synchronously.
+  useEffect(() => {
+    if (!result?.homework) {
+      setShareUrl(null)
+      return
+    }
+    let stale = false
+    buildShareLink(result.homework)
+      .then(url => { if (!stale) { setShareUrl(url); setShareError(null) } })
+      .catch(() => { if (!stale) setShareError('This browser cannot create share links.') })
+    return () => { stale = true }
+  }, [result])
 
   function set(field) {
     return e => setForm(f => ({ ...f, [field]: e.target.value }))
@@ -176,22 +195,30 @@ export default function App() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  async function handleShare() {
-    if (result.answers) {
-      const proceed = window.confirm(
-        "Share links only include the homework, not the answers — they exist only in this browser. " +
-        "Copy or save the answers first if you want to keep them, then share."
-      )
-      if (!proceed) return
+  function handleShare() {
+    setLinkCopied(false)
+    setShowShare(true)
+  }
+
+  // Called straight from the button's click handler with no await in front of
+  // it, so the browser still sees an active user gesture (see the effect that
+  // precomputes shareUrl). The link stays on screen either way, so a blocked
+  // clipboard just means the user selects and copies it by hand.
+  function handleCopyShareLink() {
+    if (!shareUrl) return
+    // navigator.clipboard is undefined outside secure contexts, which would
+    // throw here rather than reject below.
+    if (!navigator.clipboard) {
+      setShareError('Copying is unavailable here. Select the link above and copy it manually.')
+      return
     }
-    try {
-      const link = await buildShareLink(result.homework)
-      await navigator.clipboard.writeText(link)
-      setLinkCopied(true)
-      setTimeout(() => setLinkCopied(false), 2000)
-    } catch {
-      setError('Could not create a share link (your browser may not support it).')
-    }
+    navigator.clipboard.writeText(shareUrl).then(
+      () => {
+        setLinkCopied(true)
+        setTimeout(() => setLinkCopied(false), 2000)
+      },
+      () => setShareError('Your browser blocked the copy. Select the link above and copy it manually.')
+    )
   }
 
   function saveToFile(text, filename) {
@@ -331,6 +358,46 @@ export default function App() {
         </div>
       )}
 
+      {showShare && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3 className="modal-title">Share this homework</h3>
+            <p className="modal-desc">
+              {result?.answers
+                ? 'The link carries the homework only, not the answers. The answers exist only in this browser, so copy or save them first if you want to keep them.'
+                : 'Anyone with this link can read the homework. Nothing is stored on a server.'}
+            </p>
+            <div className="field">
+              <input
+                type="text"
+                readOnly
+                value={shareUrl || 'Building link…'}
+                onFocus={e => e.target.select()}
+                autoFocus
+              />
+            </div>
+            {shareError && <div className="lock-error">{shareError}</div>}
+            <div className="lock-actions">
+              <button
+                className="btn lock-btn"
+                type="button"
+                onClick={handleCopyShareLink}
+                disabled={!shareUrl}
+              >
+                {linkCopied ? 'Copied!' : 'Copy link'}
+              </button>
+              <button
+                className="btn secondary lock-btn"
+                type="button"
+                onClick={() => { setShowShare(false); setShareError(null) }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {loading && (
         <div className="card" style={{ marginTop: 20 }}>
           <div className="loading">
@@ -377,7 +444,7 @@ export default function App() {
             </button>
             {!showAnswers && (
               <button className="btn secondary" onClick={handleShare}>
-                {linkCopied ? 'Link copied!' : 'Share'}
+                Share
               </button>
             )}
             {result.answers && (
