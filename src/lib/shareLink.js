@@ -5,6 +5,12 @@
 
 const PREFIX = 's='
 
+// Past roughly this length a link starts causing trouble in transit: some
+// plain-text email clients hard-wrap at ~76 characters and inject line breaks
+// mid-URL, and SMS splits into many segments. Browsers themselves cope with
+// far longer (Safari is the tightest at ~80k), so this is advisory only.
+export const LONG_LINK_THRESHOLD = 2000
+
 function toBase64Url(bytes) {
   let binary = ''
   for (const b of bytes) binary += String.fromCharCode(b)

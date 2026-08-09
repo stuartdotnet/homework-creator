@@ -63,6 +63,17 @@ body {
 .field .hint { font-size: 0.8125rem; color: var(--muted); margin-top: 4px; }
 .field-error { font-size: 0.8125rem; color: #b91c1c; margin-top: 4px; }
 
+/* Advisory, not an error — amber rather than the red used for failures. */
+.share-warning {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 7px;
+  padding: 10px 12px;
+  font-size: 0.8125rem;
+  color: #92400e;
+  margin: 0 0 12px;
+}
+
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
 /* Subjects */

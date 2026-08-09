@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { buildPrompt, parseOutput } from './lib/buildPrompt'
 import { generateHomework, isConfigured } from './lib/foundry'
-import { buildShareLink, readSharedHomework } from './lib/shareLink'
+import { buildShareLink, readSharedHomework, LONG_LINK_THRESHOLD } from './lib/shareLink'
 import { validateForm, LIMITS } from './lib/validateForm'
 
 const SUBJECTS = [
@@ -376,6 +376,13 @@ export default function App() {
                 autoFocus
               />
             </div>
+            {shareUrl && shareUrl.length > LONG_LINK_THRESHOLD && (
+              <div className="share-warning">
+                This is a long link ({shareUrl.length.toLocaleString()} characters). Messaging
+                apps handle it fine, but some email programs break long links across lines.
+                For email, close this and use <strong>Save</strong> to send the file instead.
+              </div>
+            )}
             {shareError && <div className="lock-error">{shareError}</div>}
             <div className="lock-actions">
               <button
