@@ -225,8 +225,56 @@ export default function App() {
           </div>
         </div>
 
-        <div className="card">
-          <h2>Parent lock</h2>
+        <button className="btn" type="submit" disabled={!canGenerate || loading || !isConfigured()}>
+          {loading ? 'Generating…' : 'Generate Homework'}
+        </button>
+      </form>
+
+      {showPrompt && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3 className="modal-title">Parent lock</h3>
+            <p className="modal-desc">Enter the parent password to reveal the answers.</p>
+            <div className="field">
+              <input
+                type="password"
+                value={promptInput}
+                onChange={e => setPromptInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handlePromptConfirm()}
+                placeholder="Password"
+                autoFocus
+              />
+            </div>
+            {promptError && <div className="lock-error">{promptError}</div>}
+            <div className="lock-actions">
+              <button className="btn lock-btn" type="button" onClick={handlePromptConfirm}>Confirm</button>
+              <button className="btn secondary lock-btn" type="button" onClick={handlePromptCancel}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loading && (
+        <div className="card" style={{ marginTop: 20 }}>
+          <div className="loading">
+            <div className="spinner" />
+            <span>Building today's homework…</span>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="error-box" style={{ marginTop: 20 }}>
+          <strong>Error:</strong> {error}
+        </div>
+      )}
+
+      {result && (
+        <div className="card" style={{ marginTop: 20 }}>
+          <h2>
+            <span className="lock-icon">{parentLock && !answersUnlocked ? '🔒' : '🔓'}</span>
+            {' '}Parent lock
+          </h2>
           {parentLock ? (
             answersUnlocked ? (
               <>
@@ -324,49 +372,6 @@ export default function App() {
               </button>
             </>
           )}
-        </div>
-
-        <button className="btn" type="submit" disabled={!canGenerate || loading || !isConfigured()}>
-          {loading ? 'Generating…' : 'Generate Homework'}
-        </button>
-      </form>
-
-      {showPrompt && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h3 className="modal-title">Parent lock</h3>
-            <p className="modal-desc">Enter the parent password to reveal the answers.</p>
-            <div className="field">
-              <input
-                type="password"
-                value={promptInput}
-                onChange={e => setPromptInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handlePromptConfirm()}
-                placeholder="Password"
-                autoFocus
-              />
-            </div>
-            {promptError && <div className="lock-error">{promptError}</div>}
-            <div className="lock-actions">
-              <button className="btn lock-btn" type="button" onClick={handlePromptConfirm}>Confirm</button>
-              <button className="btn secondary lock-btn" type="button" onClick={handlePromptCancel}>Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {loading && (
-        <div className="card" style={{ marginTop: 20 }}>
-          <div className="loading">
-            <div className="spinner" />
-            <span>Building today's homework…</span>
-          </div>
-        </div>
-      )}
-
-      {error && (
-        <div className="error-box" style={{ marginTop: 20 }}>
-          <strong>Error:</strong> {error}
         </div>
       )}
 

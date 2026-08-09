@@ -20,8 +20,13 @@ function ensureWidget() {
   if (widgetId !== null) return
   if (!window.turnstile) throw new Error('Turnstile script not loaded')
 
+  // Kept in normal layout (not display:none) so Turnstile can actually
+  // measure and render its iframe into it — display:none takes it out of
+  // the render tree entirely and the widget silently never mounts.
   const container = document.createElement('div')
-  container.style.display = 'none'
+  container.style.position = 'absolute'
+  container.style.left = '-9999px'
+  container.style.top = '-9999px'
   document.body.appendChild(container)
 
   widgetId = window.turnstile.render(container, {
