@@ -137,8 +137,22 @@ export default function App() {
     setLockError(null)
   }
 
+  const [copied, setCopied] = useState(false)
+
   function copyToClipboard(text) {
     navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  function saveToFile(text, filename) {
+    const blob = new Blob([text], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   const canGenerate = form.name && form.grade && selectedSubjects.size > 0
@@ -271,6 +285,47 @@ export default function App() {
 
       {result && (
         <div className="card" style={{ marginTop: 20 }}>
+          <div className="output-header">
+            <h2>{showAnswers ? 'Answers & Hints' : "Homework"}</h2>
+            <span className="badge">Ready</span>
+          </div>
+
+          <div className="homework-content">
+            <ReactMarkdown>
+              {showAnswers ? result.answers : result.homework}
+            </ReactMarkdown>
+          </div>
+
+          <div className="output-actions">
+            <button
+              className="btn secondary"
+              onClick={() => copyToClipboard(showAnswers ? result.answers : result.homework)}
+            >
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+            <button
+              className="btn secondary"
+              onClick={() => saveToFile(
+                showAnswers ? result.answers : result.homework,
+                `${form.name || 'homework'}-${showAnswers ? 'answers' : 'homework'}.txt`
+              )}
+            >
+              Save
+            </button>
+            {result.answers && (
+              <button
+                className="btn secondary"
+                onClick={showAnswers ? () => setShowAnswers(false) : handleShowAnswers}
+              >
+                {showAnswers ? 'Show Homework' : parentLock && !answersUnlocked ? '🔒 Show Answers' : 'Show Answers'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {result && (
+        <div className="card" style={{ marginTop: 20 }}>
           <h2>
             <span className="lock-icon">{parentLock && !answersUnlocked ? '🔒' : '🔓'}</span>
             {' '}Parent lock
@@ -372,38 +427,6 @@ export default function App() {
               </button>
             </>
           )}
-        </div>
-      )}
-
-      {result && (
-        <div className="card" style={{ marginTop: 20 }}>
-          <div className="output-header">
-            <h2>{showAnswers ? 'Answers & Hints' : "Homework"}</h2>
-            <span className="badge">Ready</span>
-          </div>
-
-          <div className="homework-content">
-            <ReactMarkdown>
-              {showAnswers ? result.answers : result.homework}
-            </ReactMarkdown>
-          </div>
-
-          <div className="output-actions">
-            <button
-              className="btn secondary"
-              onClick={() => copyToClipboard(showAnswers ? result.answers : result.homework)}
-            >
-              Copy
-            </button>
-            {result.answers && (
-              <button
-                className="btn secondary"
-                onClick={showAnswers ? () => setShowAnswers(false) : handleShowAnswers}
-              >
-                {showAnswers ? 'Show Homework' : parentLock && !answersUnlocked ? '🔒 Show Answers' : 'Show Answers'}
-              </button>
-            )}
-          </div>
         </div>
       )}
     </div>
