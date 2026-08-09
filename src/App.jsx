@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { buildPrompt, parseOutput } from './lib/buildPrompt'
 import { generateHomework, isConfigured } from './lib/foundry'
+import { buildShareLink, readSharedHomework } from './lib/shareLink'
 
 const SUBJECTS = [
   { id: 'maths',      label: 'Maths',       icon: '🔢' },
@@ -41,6 +42,22 @@ export default function App() {
   const [promptInput, setPromptInput] = useState('')
   const [promptError, setPromptError] = useState(null)
 
+  const [sharedView, setSharedView] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
+
+  // A shared link only ever carries homework text (never answers) — see
+  // src/lib/shareLink.js. Load it once on mount if the URL has one.
+  useEffect(() => {
+    readSharedHomework()
+      .then(homework => {
+        if (homework) {
+          setResult({ homework, answers: null })
+          setSharedView(true)
+        }
+      })
+      .catch(() => {}) // malformed/foreign hash — ignore, show the normal form
+  }, [])
+
   function set(field) {
     return e => setForm(f => ({ ...f, [field]: e.target.value }))
   }
@@ -76,6 +93,7 @@ export default function App() {
       setResult(parseOutput(raw))
       setShowAnswers(false)
       setAnswersUnlocked(false)
+      setSharedView(false)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -143,6 +161,24 @@ export default function App() {
     navigator.clipboard.writeText(text)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function handleShare() {
+    if (result.answers) {
+      const proceed = window.confirm(
+        "Share links only include the homework, not the answers — they exist only in this browser. " +
+        "Copy or save the answers first if you want to keep them, then share."
+      )
+      if (!proceed) return
+    }
+    try {
+      const link = await buildShareLink(result.homework)
+      await navigator.clipboard.writeText(link)
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2000)
+    } catch {
+      setError('Could not create a share link (your browser may not support it).')
+    }
   }
 
   function saveToFile(text, filename) {
@@ -287,7 +323,7 @@ export default function App() {
         <div className="card" style={{ marginTop: 20 }}>
           <div className="output-header">
             <h2>{showAnswers ? 'Answers & Hints' : "Homework"}</h2>
-            <span className="badge">Ready</span>
+            <span className="badge">{sharedView ? 'Shared' : 'Ready'}</span>
           </div>
 
           <div className="homework-content">
@@ -312,6 +348,11 @@ export default function App() {
             >
               Save
             </button>
+            {!showAnswers && (
+              <button className="btn secondary" onClick={handleShare}>
+                {linkCopied ? 'Link copied!' : 'Share'}
+              </button>
+            )}
             {result.answers && (
               <button
                 className="btn secondary"
@@ -324,7 +365,7 @@ export default function App() {
         </div>
       )}
 
-      {result && (
+      {result && result.answers && (
         <div className="card" style={{ marginTop: 20 }}>
           <h2>
             <span className="lock-icon">{parentLock && !answersUnlocked ? '🔒' : '🔓'}</span>
