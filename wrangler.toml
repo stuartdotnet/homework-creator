@@ -15,5 +15,9 @@ pages_build_output_dir = "dist"
 binding = "RATE_LIMIT"
 id = "c00a5027e60944d093396daa681e7dc0"
 
-# Secrets (FOUNDRY_*, TURNSTILE_SECRET) and vars (ALLOWED_ORIGIN) are NOT set
-# here — put them in the dashboard or via `wrangler pages secret put NAME`.
+# --- Non-secret vars ---------------------------------------------------------
+# Secrets (FOUNDRY_*, TURNSTILE_SECRET) are NOT set here — put them in the
+# dashboard's Secrets panel or via `npx wrangler pages secret put NAME`.
+[vars]
+ALLOWED_ORIGIN = "https://homework-creator.pages.dev"
+VITE_TURNSTILE_SITEKEY = "0x4AAAAAAEK0BmT4jgE2Kpuv"
