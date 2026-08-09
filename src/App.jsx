@@ -153,7 +153,7 @@ export default function App() {
       {!isConfigured() && (
         <div className="config-note">
           <strong>Setup required</strong>
-          Azure AI Foundry is not yet configured. Copy <code>.env.example</code> to <code>.env</code> and add your endpoint, API key, and deployment name. See the README for step-by-step instructions.
+          Human verification isn't configured yet. Set <code>VITE_TURNSTILE_SITEKEY</code> (and deploy the <code>/api/generate</code> function with your Azure secrets). See the README's <em>Deploying</em> section for step-by-step instructions.
         </div>
       )}
 

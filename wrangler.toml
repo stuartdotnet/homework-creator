@@ -1,0 +1,19 @@
+# Cloudflare Pages configuration.
+# Docs: https://developers.cloudflare.com/pages/functions/wrangler-configuration/
+
+name = "homework-creator"
+compatibility_date = "2024-11-01"
+pages_build_output_dir = "dist"
+
+# --- KV namespace for per-IP rate limiting ----------------------------------
+# 1. Create it once:   npx wrangler kv namespace create RATE_LIMIT
+# 2. Paste the printed id below and uncomment this block (or bind it in the
+#    dashboard: Pages project → Settings → Functions → KV namespace bindings,
+#    variable name RATE_LIMIT).
+#
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "c00a5027e60944d093396daa681e7dc0"
+
+# Secrets (FOUNDRY_*, TURNSTILE_SECRET) and vars (ALLOWED_ORIGIN) are NOT set
+# here — put them in the dashboard or via `wrangler pages secret put NAME`.
