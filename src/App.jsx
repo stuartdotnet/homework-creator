@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown'
 import { buildPrompt, parseOutput } from './lib/buildPrompt'
 import { generateHomework, isConfigured } from './lib/foundry'
 import { buildShareLink, readSharedHomework } from './lib/shareLink'
+import { validateForm, LIMITS } from './lib/validateForm'
 
 const SUBJECTS = [
   { id: 'maths',      label: 'Maths',       icon: '🔢' },
@@ -45,6 +46,11 @@ export default function App() {
   const [sharedView, setSharedView] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
 
+  // Errors appear only after the first submit attempt, then update live so
+  // they clear as the user fixes each field.
+  const [fieldErrors, setFieldErrors] = useState({})
+  const [submitAttempted, setSubmitAttempted] = useState(false)
+
   // A shared link only ever carries homework text (never answers) — see
   // src/lib/shareLink.js. Load it once on mount if the URL has one.
   useEffect(() => {
@@ -57,6 +63,10 @@ export default function App() {
       })
       .catch(() => {}) // malformed/foreign hash — ignore, show the normal form
   }, [])
+
+  useEffect(() => {
+    if (submitAttempted) setFieldErrors(validateForm(form))
+  }, [form, submitAttempted])
 
   function set(field) {
     return e => setForm(f => ({ ...f, [field]: e.target.value }))
@@ -103,7 +113,10 @@ export default function App() {
 
   async function handleGenerate(e) {
     e.preventDefault()
-    if (!form.name || !form.grade) return
+    setSubmitAttempted(true)
+    const errors = validateForm(form)
+    setFieldErrors(errors)
+    if (Object.keys(errors).length > 0) return
     await doGenerate()
   }
 
@@ -207,7 +220,9 @@ export default function App() {
         </div>
       )}
 
-      <form onSubmit={handleGenerate}>
+      {/* noValidate: this form uses its own styled validation (validateForm)
+          so browsers don't also pop their own inconsistent tooltips. */}
+      <form onSubmit={handleGenerate} noValidate>
         <div className="card">
           <h2>Child's profile</h2>
 
@@ -218,17 +233,23 @@ export default function App() {
                 value={form.name}
                 onChange={set('name')}
                 placeholder="e.g. Charlie"
+                maxLength={LIMITS.nameMax}
                 required
               />
+              {fieldErrors.name && <div className="field-error">{fieldErrors.name}</div>}
             </div>
             <div className="field">
               <label>Grade / Year *</label>
               <input
                 value={form.grade}
                 onChange={set('grade')}
-                placeholder="e.g. Grade 6"
+                placeholder="e.g. 6"
+                type="number"
+                min={LIMITS.gradeMin}
+                max={LIMITS.gradeMax}
                 required
               />
+              {fieldErrors.grade && <div className="field-error">{fieldErrors.grade}</div>}
             </div>
           </div>
 
@@ -239,9 +260,10 @@ export default function App() {
               onChange={set('age')}
               placeholder="e.g. 11"
               type="number"
-              min="4"
-              max="18"
+              min={LIMITS.ageMin}
+              max={LIMITS.ageMax}
             />
+            {fieldErrors.age && <div className="field-error">{fieldErrors.age}</div>}
           </div>
 
           <div className="field">
@@ -249,9 +271,14 @@ export default function App() {
             <textarea
               value={form.interests}
               onChange={set('interests')}
+              maxLength={LIMITS.interestsMax}
               placeholder="e.g. One Piece manga, football stats, space, Roald Dahl, Minecraft..."
             />
-            <div className="hint">The more specific, the more engaging the homework. Separate with commas.</div>
+            {fieldErrors.interests && <div className="field-error">{fieldErrors.interests}</div>}
+            <div className="hint">
+              The more specific, the more engaging the homework. Separate with commas.
+              {' '}({form.interests.length}/{LIMITS.interestsMax})
+            </div>
           </div>
         </div>
 
