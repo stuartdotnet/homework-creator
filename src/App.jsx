@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { buildPrompt, parseOutput } from './lib/buildPrompt'
 import { generateHomework, isConfigured } from './lib/foundry'
+import { mountTurnstile } from './lib/turnstile'
 import { buildShareLink, readSharedHomework, LONG_LINK_THRESHOLD } from './lib/shareLink'
 import { validateForm, LIMITS } from './lib/validateForm'
 
@@ -32,6 +33,13 @@ export default function App() {
   const [error, setError] = useState(null)
   const [result, setResult] = useState(null)
   const [showAnswers, setShowAnswers] = useState(false)
+
+  // Turnstile renders a visible badge here and solves on load, so a token is
+  // normally ready before the user presses Generate.
+  const turnstileRef = useRef(null)
+  useEffect(() => {
+    mountTurnstile(turnstileRef.current)
+  }, [])
 
   // Parent lock state — kept in memory only so it clears on every page refresh
   const [lockHash, setLockHash] = useState(null)
@@ -328,6 +336,8 @@ export default function App() {
             ))}
           </div>
         </div>
+
+        <div className="turnstile-box" ref={turnstileRef} />
 
         <button className="btn" type="submit" disabled={!canGenerate || loading || !isConfigured()}>
           {loading ? 'Generating…' : 'Generate Homework'}

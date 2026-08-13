@@ -94,6 +94,10 @@ body {
 .subject-toggle .icon { font-size: 1.25rem; }
 .subject-toggle input { display: none; }
 
+/* Turnstile — visible Non-Interactive widget above the Generate button.
+   Empty until the widget mounts, so it must not reserve space when unused. */
+.turnstile-box:not(:empty) { margin-bottom: 16px; }
+
 /* Button */
 .btn {
   display: inline-flex;
